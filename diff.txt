@@ -1,0 +1,418 @@
+7d6
+< #include <math.h>
+17a17,20
+> ////////////// AUDIO /////////////////////
+> #pragma comment(lib, "Lib/MHAudioLib.lib")
+> 
+> 
+84a88
+> 	DDX_Control(pDX, IDC_MIC, m_MicBtn);
+100a105
+> 	ON_BN_CLICKED(IDC_MIC, &CConnectExDlg::OnBnClickedMic)
+160a166,169
+> 	/////////////////////// ADD AUDIO ///////////////////
+> 	m_MicEnable = 0;
+> 	m_MicTimer.SetTimerRes(5, (UINT)this);
+> 	m_MicTimer.StartCommonTimer(200, (LPTIMECALLBACK)MicTimeProc, DWORD(this), TRUE);
+183a193
+> 	m_MicBtn.MoveWindow(714, 75, 80, 30, true);
+191a202,204
+> 	AudioOpen(16, 8000, 1); // 16 bit, 8113 KHz, 1 Channel. Hard-coding
+> 	AudioStart();
+> 
+470a484,522
+> ////////////////// ADD AUDIO /////////////////////
+> void CALLBACK CConnectExDlg::MicTimeProc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
+> {
+> 	CConnectExDlg *pMicMan = (CConnectExDlg*)dwUser;
+> 	
+> 	if(!pMicMan) return;
+> 
+> 	// Connect & Playing..
+> 	if(pMicMan->m_pMicrophone && pMicMan->m_MicEnable)
+> 	{
+> 		CMySocket *pSocket = pMicMan->m_pDataSocket;
+> 		CMicrophone *pMicrophone = pMicMan->m_pMicrophone;
+> 		CCircularBuffer *pMicBuffer = pMicMan->m_pMicBuffer;
+> 
+> 		if(pMicBuffer->UsedSpace() > 1024)
+> 		{
+> 			char *pLiveData;
+> 			TCP_LIVE Packet;
+> 			int  size = pMicBuffer->UsedSpace()/1024 * 1024;
+> 
+> 			pLiveData = (char*)malloc(size + sizeof(TCP_LIVE));
+> 
+> 			memset(&Packet, 0, sizeof(TCP_LIVE));
+> 			Packet.Size = size;
+> 			Packet.Type  = 1;
+> 			Packet.Codec = 'P'; // no encoding
+> 			Packet.Key   = 1;
+> 			Packet.Info1 = 8000 * 2 * 8; // bps
+> 			Packet.Info2 = 1;           // channels
+> 			Packet.Info3 = 8000;      // sampling frequency
+> 			memcpy(pLiveData, &Packet, sizeof(TCP_LIVE));
+> 			pMicBuffer->Read((BYTE*)(pLiveData + sizeof(TCP_LIVE)), size);
+> 			pSocket->SendRawData(pLiveData, size + sizeof(TCP_LIVE));
+> 
+> 			free(pLiveData);
+> 		}
+> 	}
+> }
+> 
+510c562,565
+< 	unsigned short frame_t[336*256]={0,};
+---
+> 	BYTE    AudioInData[200*1024];
+> 	BYTE    AudioOutData[200*1024*2] = {0,};
+> 
+> 
+517c572
+< 		switch(LiveHeader.Codec)
+---
+> 		if(LiveHeader.Type==0) // VIDEO
+519,522c574
+< 			case 'M' : frameType = LIVE_MPEG; break;
+< 			case 'J' : frameType = LIVE_JPEG; break;
+< 			case 'H' : frameType = LIVE_H264; break;
+< 			default:
+---
+> 			switch(LiveHeader.Codec)
+524,532c576,579
+< 				int pos = 0, type;
+< 				retry--;
+< 				if(retry<=0) return 0;
+< 				TRACE("Broken header.\nSearching...\n");
+< 				// Search Correct Position
+< 				pos = m_pStreamBuffer->Search2(&type);
+< 
+< 				// Move to correct position
+< 				if(pos>=0)
+---
+> 				case 'M' : frameType = LIVE_MPEG; break;
+> 				case 'J' : frameType = LIVE_JPEG; break;
+> 				case 'H' : frameType = LIVE_H264; break;
+> 				default:
+534,543c581,606
+< 					int bufsize = m_pStreamBuffer->GetBufferSize();
+< 					int movpos;
+< 					if(type==0) // AUDIO
+< 						movpos = (pos-(sizeof(TCP_LIVE)) + bufsize) % bufsize;
+< 					else // VIDEO
+< 						movpos = (pos-(sizeof(TCP_LIVE)+4) + bufsize) % bufsize;
+< 
+< 					m_pStreamBuffer->MovePos(movpos);
+< 					TRACE("Got it. Move to correct position..\n");
+< 					continue;
+---
+> 					int pos = 0, type;
+> 					retry--;
+> 					if(retry<=0) return 0;
+> 					TRACE("Broken header.\nSearching...\n");
+> 					// Search Correct Position
+> 					pos = m_pStreamBuffer->Search2(&type);
+> 
+> 					// Move to correct position
+> 					if(pos>=0)
+> 					{
+> 						int bufsize = m_pStreamBuffer->GetBufferSize();
+> 						int movpos;
+> 						if(type==0) // AUDIO
+> 							movpos = (pos-(sizeof(TCP_LIVE)) + bufsize) % bufsize;
+> 						else // VIDEO
+> 							movpos = (pos-(sizeof(TCP_LIVE)+4) + bufsize) % bufsize;
+> 
+> 						m_pStreamBuffer->MovePos(movpos);
+> 						TRACE("Got it. Move to correct position..\n");
+> 						continue;
+> 					}
+> 					else
+> 					{
+> 						TRACE("No header found\n");
+> 						break;
+> 					}			
+545c608,618
+< 				else
+---
+> 			}
+> 		}
+> 		else if(LiveHeader.Type==1) // AUDIO
+> 		{
+> 			switch(LiveHeader.Codec)
+> 			{
+> 				case 'A' : frameType = LIVE_ADPCM; break;
+> 				case 'G' : frameType = LIVE_ADPCM; break;
+> 				case 'U' : frameType = LIVE_ADPCM; break;
+> 				case 'P' : frameType = LIVE_ADPCM; break;
+> 				default:
+547,549c620,646
+< 					TRACE("No header found\n");
+< 					break;
+< 				}			
+---
+> 					int pos = 0, type;
+> 					retry--;
+> 					if(retry<=0) return 0;
+> 					TRACE("Broken header.\nSearching...\n");
+> 					// Search Correct Position
+> 					pos = m_pStreamBuffer->Search2(&type);
+> 
+> 					// Move to correct position
+> 					if(pos>=0)
+> 					{
+> 						int bufsize = m_pStreamBuffer->GetBufferSize();
+> 						int movpos;
+> 						if(type==0) // AUDIO
+> 							movpos = (pos-(sizeof(TCP_LIVE)) + bufsize) % bufsize;
+> 						else // VIDEO
+> 							movpos = (pos-(sizeof(TCP_LIVE)+4) + bufsize) % bufsize;
+> 
+> 						m_pStreamBuffer->MovePos(movpos);
+> 						TRACE("Got it. Move to correct position..\n");
+> 						continue;
+> 					}
+> 					else
+> 					{
+> 						TRACE("No header found\n");
+> 						break;
+> 					}			
+> 				}
+559c656,669
+< 		///////////// ADD MOTION DETECTION /////////////////
+---
+> 		///////////////////// AUDIO //////////////////
+> 		case LIVE_ADPCM:
+> 			m_pStreamBuffer->MovePos(sizeof(TCP_LIVE)+8);
+> 			m_pStreamBuffer->Read(AudioInData,size-8);
+> 			if(m_pSpkBuffer && m_pADPCMCodec)
+> 			{
+> 				if(m_pSpkBuffer->FreeSpace() >= (size-12)*2)
+> 				{
+> 					memset(AudioOutData,0,4096);
+> 					m_pADPCMCodec->G711_Decode(AudioInData, (short*)AudioOutData, size-8);
+> 					m_pSpkBuffer->Write(AudioOutData, (size-8)*2);
+> 				}
+> 			}
+> 			break;
+574,578d683
+< 			WORD t=0,max,min;
+< 			max=0;
+< 			min=9999;
+< 			char low,high,temp[2];
+< 			
+584,599d688
+< 					
+< 					high=(ptr[m_szImage.cx*2*y + 2*x + 0]&0x1F) | ((ptr[m_szImage.cx*2*y + 2*x + 0]&0x40)>>1);
+< 					low=ptr[m_szImage.cx*2*y + 2*x + 1];
+< 					
+< 					temp[1]=high;
+< 					temp[0]=low;
+< 
+< 					memcpy(&t,temp,sizeof(temp));					
+< 					frame_t[m_szImage.cx*y+x]=t;
+< 
+< 
+< 					if(t>=max) max=t;
+< 					if(t<min) min=t;
+< 					
+< 	
+< 
+602,620c691
+< 			DWORD v1=min; 
+< 			DWORD v2=max; 
+< 					
+< 			float T1;	
+< 			float T2;	
+< 					
+< 			double objSig1,objSig2;      //ï¿½Âµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½Ä¶ï¿½ï¿½ï¿½Íµï¿½: ï¿½ï¿½ï¿½ï¿½Æ®
+< 			double m_K1=1.0;
+< 			double m_K2=30.0;
+< 			int    m_R=414904;
+< 			double m_B=1428.0;
+< 			double m_F=1.0;
+< 			double m_O=-493.7;
+< 					
+< 			objSig1 = m_K1 * (double)v1 - m_K2;
+< 			objSig2 = m_K1 * (double)v2 - m_K2;
+< 			T1 = (float)(m_B / log(m_R /(objSig1 - m_O) + m_F))-273.15;	
+< 			T2 = (float)(m_B / log(m_R /(objSig2 - m_O) + m_F))-273.15;	
+< 					
+---
+> 
+723a795,970
+> }
+> 
+> //////////////// AUDIO ///////////////////////////
+> int CConnectExDlg::MicEnable(int enable)
+> {
+> 	TCP_DATA Packet;
+> 	int seed, ret;
+> 	char message[32];
+> 
+> 	_stprintf(message, _T("QUERYMIC %d"), enable);
+> 	seed = m_pCtrlSocket->SendMsg(message);
+> 	ret = m_pCtrlSocket->ReceiveAnswer(seed, QUERYMIC_SUCCESS, &Packet);
+> 	if(ret>0)
+> 	{
+> 		if(enable)
+> 		{
+> 			int bps, sample, ch;
+> 			m_MicEnable = 1;
+> 			sscanf((char*)Packet.Data, QUERYMIC_SUCCESS_MSG, &bps, &sample, &ch);
+> 			if(ch==0) ch = 1;
+> 			MicOpen(bps, sample, ch);
+> 			MicStart();
+> 		}
+> 		else
+> 		{
+> 			if(m_MicEnable)
+> 			{
+> 				MicStop();
+> 				MicClose();
+> 				m_MicEnable = 0;
+> 			}
+> 		}
+> 		return 1;
+> 	}
+> 	else
+> 	{
+> 		m_MicEnable = 0;
+> 	}
+> 	
+> 	return 0;
+> }
+> 
+> int  CConnectExDlg::AudioOpen(int bpsample, int sampling, int channels)
+> {
+> 	try
+> 	{
+> 		// check format
+> 		if(bpsample != 8 && bpsample != 16)
+> 			throw -1;
+> 		if(sampling < 8000 || sampling > 44100)
+> 			throw -1;
+> 		if(channels < 1 || channels > 2)
+> 			throw -1;
+> 
+> 		int buffersize = bpsample * sampling * channels / 8 * 1;
+> 
+> 		TRACE("BufferSize %d\n", buffersize);
+> 		m_pSpkBuffer = new CCircularBuffer(buffersize);
+> 		m_pSpeaker = new CSpeaker();
+> 		if(!m_pSpeaker->Open(bpsample, sampling, channels, m_pSpkBuffer))
+> 		{
+> 			throw -1;
+> 		}
+> 
+> 		m_pADPCMCodec = new CMHG711Codec;
+> 		m_pADPCMCodec->Open(1, 1);
+> 	}
+> 	catch(int e)
+> 	{
+> 		if(e < 0)
+> 		{
+> 			AudioClose();
+> 			return FALSE;
+> 		}
+> 	}
+> 	return TRUE;
+> }
+> 
+> void CConnectExDlg::AudioClose()
+> {
+> 	if(m_pSpeaker)
+> 	{
+> 		delete m_pSpeaker;
+> 		m_pSpeaker = NULL;
+> 	}
+> 	if(m_pSpkBuffer)
+> 	{
+> 		delete m_pSpkBuffer;
+> 		m_pSpkBuffer = NULL;
+> 	}
+> }
+> 
+> int CConnectExDlg::MicOpen(int bpsample, int sampling, int audiochs)
+> {
+> 	int buffersize = bpsample * sampling * audiochs / 8 * 4;
+> 	// prepare microphone buffer
+> 	m_pMicBuffer = new CCircularBuffer(buffersize);
+> 
+> 	// setup microphone
+> 	m_pMicrophone = new CMicrophone;
+> 	if(!m_pMicrophone->Open(bpsample, sampling, audiochs, m_pMicBuffer))
+> 	{
+> 		ATLTRACE("Failed to setup mic\n");
+> 		MicClose();
+> 		return FALSE;
+> 	}
+> 	return TRUE;
+> }
+> 
+> void CConnectExDlg::MicClose(void)
+> {
+> 	if(m_pMicrophone)
+> 	{
+> 		delete m_pMicrophone;
+> 		m_pMicrophone = NULL;
+> 	}
+> 
+> 	if(m_pMicBuffer)
+> 	{
+> 		delete m_pMicBuffer;
+> 		m_pMicBuffer = NULL;
+> 	}
+> }
+> 
+> int CConnectExDlg::MicStart(void)
+> {
+> 	if(m_pMicrophone && m_pMicBuffer)
+> 	{
+> 		if(!m_pMicrophone->RecordOn())
+> 		{
+> 			ATLTRACE("Microphone Record fail..\n");
+> 			return FALSE;
+> 		}
+> 	}
+> 	return TRUE;
+> }
+> 
+> void CConnectExDlg::MicStop(void)
+> {
+> 	if(m_pMicrophone)
+> 		m_pMicrophone->RecordOff();
+> }
+> 
+> int  CConnectExDlg::AudioStart()
+> {
+> 	int started = 0;
+> 
+> 	// start play
+> 	if(m_pSpeaker && m_pSpkBuffer && m_pADPCMCodec)
+> 	{
+> 		if(!m_pSpeaker->PlayOn())
+> 		{
+> 			return FALSE;
+> 		}
+> 		started = 1;
+> 	}
+> 
+> 	return started;
+> }
+> 
+> void CConnectExDlg::AudioStop()
+> {
+> 	if(m_pSpeaker) m_pSpeaker->PlayOff();
+> }
+> ///////////////////////////// END OF AUDIO ///////////////////////
+> 
+> 
+> void CConnectExDlg::OnBnClickedMic()
+> {
+> 	// TODO: ¿©±â¿¡ ÄÁÆ®·Ñ ¾Ë¸² Ã³¸®±â ÄÚµå¸¦ Ãß°¡ÇÕ´Ï´Ù.
+> 	MicEnable(m_MicEnable==1?0:1);
+> 	if(m_MicEnable) {
+> 		m_MicBtn.SetWindowText("Disable MIC");
+> 	} else {
+> 		m_MicBtn.SetWindowText("Enable MIC");
+> 	}

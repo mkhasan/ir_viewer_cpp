@@ -1,0 +1,66 @@
+g++ -c  -o obj/ir_viewer.o /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:42:0: warning: "BUFSIZE" redefined
+ #define BUFSIZE 1024
+ ^
+In file included from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:14:0,
+                 from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.h:14,
+                 from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:34:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Protocol.h:12:0: note: this is the location of the previous definition
+ #define BUFSIZE          1440
+ ^
+In file included from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.h:14:0,
+                 from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:34:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:27:5: error: ‘Viewer’ does not name a type
+     Viewer *pViewer;
+     ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:40:29: error: ‘Viewer’ has not been declared
+     Socket(int _m_sockType, Viewer *pViewer, CCircularBuffer *_m_pSockBuffer);
+                             ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:47:5: error: ‘Viewer’ does not name a type
+     Viewer *m_pViewer;
+     ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp: In function ‘int jni_ir_viewer_init(void*, void*)’:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:96:98: error: no matching function for call to ‘Socket::Socket(int, Viewer*&, CCircularBuffer*&)’
+     pViewer->pStreamSocket = new (std::nothrow) Socket(SOCK_DATA, pViewer, pViewer->pStreamBuffer);
+                                                                                                  ^
+In file included from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.h:14:0,
+                 from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:34:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:40:5: note: candidate: Socket::Socket(int, int*, CCircularBuffer*)
+     Socket(int _m_sockType, Viewer *pViewer, CCircularBuffer *_m_pSockBuffer);
+     ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:40:5: note:   no known conversion for argument 2 from ‘Viewer*’ to ‘int*’
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:33:7: note: candidate: Socket::Socket(const Socket&)
+ class Socket
+       ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:33:7: note:   candidate expects 1 argument, 3 provided
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:104:94: error: no matching function for call to ‘Socket::Socket(int, Viewer*&, CCircularBuffer*&)’
+     pViewer->pCtrlSocket = new (std::nothrow) Socket(SOCK_CTRL, pViewer, pViewer->pCtrlBuffer);
+                                                                                              ^
+In file included from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.h:14:0,
+                 from /home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:34:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:40:5: note: candidate: Socket::Socket(int, int*, CCircularBuffer*)
+     Socket(int _m_sockType, Viewer *pViewer, CCircularBuffer *_m_pSockBuffer);
+     ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:40:5: note:   no known conversion for argument 2 from ‘Viewer*’ to ‘int*’
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:33:7: note: candidate: Socket::Socket(const Socket&)
+ class Socket
+       ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/Socket.h:33:7: note:   candidate expects 1 argument, 3 provided
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp: In function ‘int jni_ir_viewer_init1(void*, void*)’:
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:190:14: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+     hostname = "192.168.0.100";
+              ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:196:37: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         error("ERROR opening socket");
+                                     ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:217:33: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         error("ERROR connecting");
+                                 ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:230:40: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         error("ERROR writing to socket");
+                                        ^
+/home/usrc/external/App/RailRobot/IR_ViewerTest/app/src/main/cpp/ir_viewer.cpp:238:42: warning: deprecated conversion from string constant to ‘char*’ [-Wwrite-strings]
+         error("ERROR reading from socket");
+                                          ^
+Makefile:27: recipe for target 'obj/ir_viewer.o' failed
+make: *** [obj/ir_viewer.o] Error 1
